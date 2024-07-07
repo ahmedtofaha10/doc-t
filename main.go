@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/ahmedtofaha10/doc-t/laravel"
 	"github.com/urfave/cli/v2"
 )
 
@@ -26,6 +27,7 @@ func main() {
 				},
 				Action: func(cCtx *cli.Context) error {
 					path := cCtx.String("path")
+					laravel.Documenting(path)
 					fmt.Println("start documenting:", path)
 					return nil
 				},
