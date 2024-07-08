@@ -1,7 +1,9 @@
 package laravel
 
 type Project struct {
-	BasePath string
+	BasePath    string
+	Env         map[string]string
+	Dependinces ProjectDependinces
 }
 type ProjectDependinces struct {
 	Name       string

@@ -1,11 +1,12 @@
 package laravel
 
 import (
+	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 )
 
 func (project *Project) GetComposerDependincies() {
@@ -24,5 +25,27 @@ func (project *Project) GetComposerDependincies() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(dependinces.Require["php"])
+	project.Dependinces = dependinces
+}
+func (project *Project) GetEnvFileData() {
+	file, err := os.Open(project.BasePath + "\\.env")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	env := map[string]string{}
+	for scanner.Scan() {
+		text := scanner.Text()
+		if text == "" {
+			continue
+		}
+		splited := strings.Split(text, "=")
+		env[splited[0]] = splited[1]
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	project.Env = env
+	// fmt.Println(env["APP_NAME"])
 }
