@@ -34,17 +34,20 @@ func (project *Project) GetMigrationsData() {
 	if err != nil {
 		panic(err)
 	}
-	// for migrationIndex := range migrations {
-
-	// }
-	migration := migrations[0]
-	if !migration.IsDir() {
-		fmt.Println(migration.Name())
-		extractMigrationFileData(project.BasePath + "\\database\\migrations\\" + migration.Name())
+	tables := map[string]map[string]string{}
+	for migrationIndex := range migrations {
+		migration := migrations[migrationIndex]
+		if !migration.IsDir() {
+			fmt.Println(migration.Name())
+			table, columns := extractMigrationFileData(project.BasePath + "\\database\\migrations\\" + migration.Name())
+			tables[table] = columns
+		}
 	}
+
 }
 func extractMigrationFileData(filePath string) (table string, columns map[string]string) {
 	file, err := os.Open(filePath)
+	columns = map[string]string{}
 	if err != nil {
 		panic(err)
 	}
@@ -56,8 +59,23 @@ func extractMigrationFileData(filePath string) (table string, columns map[string
 		columnName = ""
 		columnType = ""
 		input := scanner.Text()
+		if strings.Contains(input, "down()") {
+			break
+		}
+		reTableName := regexp.MustCompile(`Schema::create\('([^']*)'`)
+		reTableName2 := regexp.MustCompile(`Schema::table\('([^']*)'`)
 		reSingleQuotes := regexp.MustCompile(`'([^']*)'`)
 		matchSingleQuotes := reSingleQuotes.FindStringSubmatch(input)
+		matchTableName2 := reTableName2.FindStringSubmatch(input)
+		matchTableName := reTableName.FindStringSubmatch(input)
+		if len(matchTableName) > 1 {
+			table = matchTableName[1]
+			continue
+		}
+		if len(matchTableName2) > 1 {
+			table = matchTableName2[1]
+			continue
+		}
 		if len(matchSingleQuotes) > 1 {
 			columnName = matchSingleQuotes[1]
 		}
@@ -68,7 +86,13 @@ func extractMigrationFileData(filePath string) (table string, columns map[string
 		if len(matchChainMethod) > 1 {
 			columnType = matchChainMethod[1]
 		}
-		fmt.Printf("%s : %s \n", columnName, columnType)
+		if columnName != "" && columnType != "" {
+			if columnName == "" {
+				columnName = columnType
+			}
+			// fmt.Printf("%s : %s \n", columnName, columnType)
+			columns[columnName] = columnType
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
