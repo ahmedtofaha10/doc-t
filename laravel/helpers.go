@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 func (project *Project) GetComposerDependincies() {
@@ -43,7 +44,44 @@ func (project *Project) GetMigrationsData() {
 			tables[table] = columns
 		}
 	}
+	project.Tables = tables
 
+}
+func splitCamelCase(word string) []string {
+	var words []string
+	var currentWord strings.Builder
+
+	for i, r := range word {
+		if unicode.IsUpper(r) && i != 0 {
+			words = append(words, currentWord.String())
+			currentWord.Reset()
+		}
+		currentWord.WriteRune(r)
+	}
+	words = append(words, currentWord.String())
+
+	return words
+}
+
+// Pluralize a word by appending "s" or "es"
+func Pluralize(word string) string {
+	if strings.HasSuffix(word, "s") || strings.HasSuffix(word, "sh") || strings.HasSuffix(word, "ch") || strings.HasSuffix(word, "x") || strings.HasSuffix(word, "z") {
+		return strings.ToLower(word + "es")
+	}
+	return strings.ToLower(word + "s")
+}
+
+// Pluralize a compound word
+func PluralizeCompoundWord(compoundWord string) string {
+	words := splitCamelCase(compoundWord)
+	if len(words) == 0 {
+		return compoundWord
+	}
+
+	// Pluralize the last word of the compound word
+	words[len(words)-1] = Pluralize(words[len(words)-1])
+
+	return strings.ToLower(strings.Join(words, "_"))
 }
 func extractMigrationFileData(filePath string) (table string, columns map[string]string) {
 	file, err := os.Open(filePath)
