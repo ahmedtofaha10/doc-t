@@ -24,11 +24,20 @@ func main() {
 						Usage:    "path for the base/root directory of the project",
 						Required: true,
 					},
+					&cli.StringFlag{
+						Name:     "destination",
+						Usage:    "destination for generated doc-t.md file",
+						Required: false,
+					},
 				},
 				Action: func(cCtx *cli.Context) error {
 					path := cCtx.String("path")
-					laravel.Documenting(path)
-					fmt.Println("start documenting:", path)
+					destination := cCtx.String("destination")
+					if destination == "" {
+						destination = path
+					}
+					laravel.Documenting(path, destination)
+					fmt.Println("Documented at ", destination+"\\doc-t.md")
 					return nil
 				},
 				BashComplete: func(cCtx *cli.Context) {

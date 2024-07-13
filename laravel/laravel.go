@@ -8,29 +8,29 @@ import (
 	"strings"
 )
 
-func Documenting(base_path string) {
+func Documenting(base_path, destination string) {
 	project := Project{BasePath: base_path}
 	project.GetMigrationsData()
 	project.ValidateProjectStructure()
 	project.GetComposerDependincies()
 	project.GetEnvFileData()
-	writeDocumentationFile(project)
+	writeDocumentationFile(project, destination)
 
 }
 func writeProjectMeta(file *os.File, project Project) {
 	projectName := string(project.Env["APP_NAME"])
 	file.Write([]byte(fmt.Sprintf("# %s\n", projectName)))
 	file.Write([]byte("## Requirements\n"))
-	file.Write([]byte(fmt.Sprintf("> php : %s \n", project.Dependinces.Require["php"])))
+	file.Write([]byte(fmt.Sprintf("> * php : %s \n", project.Dependinces.Require["php"])))
 	file.Write([]byte("## Dependinces\n"))
 	for k := range project.Dependinces.Require {
 		if k == "php" {
 			continue
 		}
-		file.Write([]byte(fmt.Sprintf("> %s : %s \n", k, project.Dependinces.Require[k])))
+		file.Write([]byte(fmt.Sprintf("> * %s : %s \n", k, project.Dependinces.Require[k])))
 	}
 }
-func getModelFileData(modelPath string) (tableName string) {
+func getModelFileData(modelPath string) (tableName string, methods []string) {
 	tableName = ""
 	file, err := os.Open(modelPath)
 	if err != nil {
@@ -41,15 +41,23 @@ func getModelFileData(modelPath string) (tableName string) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		tablePattern := `\$table = '([^']*)'`
-		re := regexp.MustCompile(tablePattern)
+		methodsPattern := `function\s+(\w+)\s*\(`
+		reTable := regexp.MustCompile(tablePattern)
+		reMethods := regexp.MustCompile(methodsPattern)
 
-		matches := re.FindStringSubmatch(text)
-		if len(matches) > 1 {
-			tableName = matches[1]
+		tableMatches := reTable.FindStringSubmatch(text)
+
+		if len(tableMatches) > 1 {
+			tableName = tableMatches[1]
+			continue
+		}
+		methodMatches := reMethods.FindStringSubmatch(text)
+		if len(methodMatches) > 1 {
+			methods = append(methods, methodMatches[1])
 			continue
 		}
 	}
-	return tableName
+	return tableName, methods
 
 }
 func writeProjectModels(file *os.File, project Project) {
@@ -59,22 +67,36 @@ func writeProjectModels(file *os.File, project Project) {
 		panic(err)
 	}
 	tableName := ""
+	var methods []string
+	solidTableName := ""
 	for modelIndex := range models {
 		model := models[modelIndex]
-		tableName = getModelFileData(project.BasePath + "\\app\\Models\\" + model.Name())
+		tableName, methods = getModelFileData(project.BasePath + "\\app\\Models\\" + model.Name())
 		modelName := strings.Replace(model.Name(), ".php", "", 1)
 		if len(tableName) == 0 {
-			tableName = PluralizeCompoundWord(modelName)
+			tableName, solidTableName = PluralizeCompoundWord(modelName)
 		}
 		file.Write([]byte(fmt.Sprintf("### %s (%s)\n", modelName, tableName)))
 		columns := project.Tables[tableName]
+		if len(columns) == 0 {
+			columns = project.Tables[solidTableName]
+		}
+		if len(columns) > 0 {
+			file.Write([]byte(fmt.Sprintf("\n**[ %s ]**\n", "Columns")))
+		}
 		for columnName := range columns {
-			file.Write([]byte(fmt.Sprintf("> * %s (%s)\n", columnName, columns[columnName])))
+			file.Write([]byte(fmt.Sprintf("> * %s (%s)\t\n", columnName, columns[columnName])))
+		}
+		if len(methods) > 0 {
+			file.Write([]byte(fmt.Sprintf("\n**[ %s ]**\t\n", "Methods")))
+			for methodIndex := range methods {
+				file.Write([]byte(fmt.Sprintf("> * %s()\t\n", methods[methodIndex])))
+			}
 		}
 	}
 }
-func writeDocumentationFile(project Project) {
-	filePath := project.BasePath + "\\doc-t.md"
+func writeDocumentationFile(project Project, destination string) {
+	filePath := destination + "\\doc-t.md"
 	if _, err := os.Stat(filePath); !os.IsNotExist(err) { // check file
 		os.Remove(filePath)
 	}

@@ -3,7 +3,6 @@ package laravel
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -39,7 +38,7 @@ func (project *Project) GetMigrationsData() {
 	for migrationIndex := range migrations {
 		migration := migrations[migrationIndex]
 		if !migration.IsDir() {
-			fmt.Println(migration.Name())
+			// fmt.Println(migration.Name())
 			table, columns := extractMigrationFileData(project.BasePath + "\\database\\migrations\\" + migration.Name())
 			tables[table] = columns
 		}
@@ -72,16 +71,17 @@ func Pluralize(word string) string {
 }
 
 // Pluralize a compound word
-func PluralizeCompoundWord(compoundWord string) string {
+func PluralizeCompoundWord(compoundWord string) (string, string) {
 	words := splitCamelCase(compoundWord)
 	if len(words) == 0 {
-		return compoundWord
+		return compoundWord, ""
 	}
+	solidTableName := strings.ToLower(strings.Join(words, "_"))
 
 	// Pluralize the last word of the compound word
 	words[len(words)-1] = Pluralize(words[len(words)-1])
-
-	return strings.ToLower(strings.Join(words, "_"))
+	tableName := strings.ToLower(strings.Join(words, "_"))
+	return tableName, solidTableName
 }
 func extractMigrationFileData(filePath string) (table string, columns map[string]string) {
 	file, err := os.Open(filePath)
@@ -124,10 +124,10 @@ func extractMigrationFileData(filePath string) (table string, columns map[string
 		if len(matchChainMethod) > 1 {
 			columnType = matchChainMethod[1]
 		}
+		if columnName == "" {
+			columnName = columnType
+		}
 		if columnName != "" && columnType != "" {
-			if columnName == "" {
-				columnName = columnType
-			}
 			// fmt.Printf("%s : %s \n", columnName, columnType)
 			columns[columnName] = columnType
 		}
