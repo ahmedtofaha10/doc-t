@@ -107,5 +107,5 @@ func writeDocumentationFile(project Project, destination string) {
 	defer file.Close()
 	writeProjectMeta(file, project)
 	writeProjectModels(file, project)
-
+	project.readRoutes()
 }

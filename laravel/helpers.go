@@ -3,6 +3,7 @@ package laravel
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -158,4 +159,39 @@ func (project *Project) GetEnvFileData() {
 	}
 	project.Env = env
 	// fmt.Println(env["APP_NAME"])
+}
+func (project *Project) readRoutes() {
+	// apiRoutes := []map[string]string{}
+	apiFile, err := os.Open(project.BasePath + "\\routes\\api.php")
+	if err != nil {
+		panic(err)
+	}
+	defer apiFile.Close()
+	scanner := bufio.NewScanner(apiFile)
+	regexMethod := regexp.MustCompile(`::([^']*)\(`)
+	currentMiddlewares := []string{}
+	oppendedFunc := false
+	// currentPrefixes := []string{}
+	for scanner.Scan() {
+		methodMatches := regexMethod.FindStringSubmatch(scanner.Text())
+		if len(methodMatches) > 1 {
+			method := methodMatches[1]
+			if strings.Contains(scanner.Text(), "){") {
+				oppendedFunc = true
+			}
+			if strings.Contains(scanner.Text(), "});") {
+				oppendedFunc = false
+			}
+			if method == "middleware" {
+				regexMiddleware := regexp.MustCompile(`middleware\(\[\s*(.*?)\s*\]\)`)
+				middlewareMatches := regexMiddleware.FindStringSubmatch(scanner.Text())
+				// fmt.Println(middlewareMatches)
+				if len(middlewareMatches) > 1 {
+					currentMiddlewares = append(currentMiddlewares, middlewareMatches[1])
+					fmt.Println(currentMiddlewares)
+				}
+			}
+			// fmt.Println(method)
+		}
+	}
 }
