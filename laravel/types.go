@@ -13,6 +13,7 @@ type ProjectDependinces struct {
 }
 type Route struct {
 	Uri         string
+	Method      string
 	FullUri     string
 	Middlewares []string
 	Prefixes    []string

@@ -208,7 +208,7 @@ func (project *Project) readRoutes() []Route {
 					// fmt.Println(method, uri, currentGroups)
 					middlewares := []string{}
 					prefixes := []string{}
-					fullUri := ""
+					fullUri := "api/"
 					for groupIndex := range currentGroups {
 						if currentGroups[groupIndex]["type"] == "middleware" {
 							middlewares = append(middlewares, currentGroups[groupIndex]["value"])
@@ -223,7 +223,8 @@ func (project *Project) readRoutes() []Route {
 					route.Middlewares = middlewares
 					route.Prefixes = prefixes
 					route.Uri = uri
-					route.FullUri = fullUri
+					route.Method = method
+					route.FullUri = strings.Replace(fullUri, "//", "/", -1)
 					routes = append(routes, route)
 				}
 			}

@@ -18,9 +18,15 @@ func Documenting(base_path, destination string) {
 
 }
 func writeRoutes(file *os.File, routes []Route) {
-	file.Write([]byte("## Routes\n"))
+	file.Write([]byte("\n## Routes"))
 	for routeIndex := range routes {
 		file.Write([]byte(fmt.Sprintf("\n> **uri**: %s \n", routes[routeIndex].FullUri)))
+		file.Write([]byte(fmt.Sprintf("> **method**: %s \n", strings.ToUpper(routes[routeIndex].Method))))
+		if len(routes[routeIndex].Middlewares) > 0 {
+			file.Write([]byte(fmt.Sprintf("> **middlewares**: %s \n", strings.Join(routes[routeIndex].Middlewares, ","))))
+		} else {
+			file.Write([]byte("> **middlewares**: none \n"))
+		}
 	}
 }
 func writeProjectMeta(file *os.File, project Project) {
