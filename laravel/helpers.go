@@ -3,7 +3,6 @@ package laravel
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os"
@@ -160,7 +159,7 @@ func (project *Project) GetEnvFileData() {
 	project.Env = env
 	// fmt.Println(env["APP_NAME"])
 }
-func (project *Project) readRoutes() {
+func (project *Project) readRoutes() []Route {
 	// apiRoutes := []map[string]string{}
 	apiFile, err := os.Open(project.BasePath + "\\routes\\api.php")
 	if err != nil {
@@ -169,29 +168,67 @@ func (project *Project) readRoutes() {
 	defer apiFile.Close()
 	scanner := bufio.NewScanner(apiFile)
 	regexMethod := regexp.MustCompile(`::([^']*)\(`)
-	currentMiddlewares := []string{}
-	oppendedFunc := false
-	// currentPrefixes := []string{}
+	currentGroups := []map[string]string{}
+	routes := []Route{}
 	for scanner.Scan() {
 		methodMatches := regexMethod.FindStringSubmatch(scanner.Text())
+		if strings.Contains(scanner.Text(), "});") {
+			if len(currentGroups) > 0 {
+				currentGroups = currentGroups[0 : len(currentGroups)-1]
+			}
+		}
 		if len(methodMatches) > 1 {
 			method := methodMatches[1]
-			if strings.Contains(scanner.Text(), "){") {
-				oppendedFunc = true
-			}
-			if strings.Contains(scanner.Text(), "});") {
-				oppendedFunc = false
-			}
+
 			if method == "middleware" {
 				regexMiddleware := regexp.MustCompile(`middleware\(\[\s*(.*?)\s*\]\)`)
 				middlewareMatches := regexMiddleware.FindStringSubmatch(scanner.Text())
 				// fmt.Println(middlewareMatches)
 				if len(middlewareMatches) > 1 {
-					currentMiddlewares = append(currentMiddlewares, middlewareMatches[1])
-					fmt.Println(currentMiddlewares)
+					newGroup := map[string]string{}
+					newGroup["type"] = "middleware"
+					newGroup["value"] = middlewareMatches[1]
+					currentGroups = append(currentGroups, newGroup)
+				}
+			} else if method == "group" {
+				regexPrefix := regexp.MustCompile(`'prefix'\s*=>\s*'([^']*)'`)
+				prefixMatches := regexPrefix.FindStringSubmatch(scanner.Text())
+				// fmt.Println(middlewareMatches)
+				if len(prefixMatches) > 1 {
+					newGroup := map[string]string{}
+					newGroup["type"] = "prefix"
+					newGroup["value"] = prefixMatches[1]
+					currentGroups = append(currentGroups, newGroup)
+				}
+			} else {
+				regexUri := regexp.MustCompile(`::` + method + `\('([^']*)',`)
+				uriMatches := regexUri.FindStringSubmatch(scanner.Text())
+				if len(uriMatches) > 1 {
+					uri := uriMatches[1]
+					// fmt.Println(method, uri, currentGroups)
+					middlewares := []string{}
+					prefixes := []string{}
+					fullUri := ""
+					for groupIndex := range currentGroups {
+						if currentGroups[groupIndex]["type"] == "middleware" {
+							middlewares = append(middlewares, currentGroups[groupIndex]["value"])
+						} else if currentGroups[groupIndex]["type"] == "prefix" {
+							prefixes = append(prefixes, currentGroups[groupIndex]["value"])
+							fullUri += currentGroups[groupIndex]["value"]
+						}
+					}
+					fullUri += uri
+					route := Route{}
+					// TODO get and add the action also
+					route.Middlewares = middlewares
+					route.Prefixes = prefixes
+					route.Uri = uri
+					route.FullUri = fullUri
+					routes = append(routes, route)
 				}
 			}
-			// fmt.Println(method)
+
 		}
 	}
+	return routes
 }

@@ -11,3 +11,9 @@ type ProjectDependinces struct {
 	Require    map[string]string
 	RequireDev map[string]string
 }
+type Route struct {
+	Uri         string
+	FullUri     string
+	Middlewares []string
+	Prefixes    []string
+}

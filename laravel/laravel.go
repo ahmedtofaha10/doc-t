@@ -17,6 +17,12 @@ func Documenting(base_path, destination string) {
 	writeDocumentationFile(project, destination)
 
 }
+func writeRoutes(file *os.File, routes []Route) {
+	file.Write([]byte("## Routes\n"))
+	for routeIndex := range routes {
+		file.Write([]byte(fmt.Sprintf("\n> **uri**: %s \n", routes[routeIndex].FullUri)))
+	}
+}
 func writeProjectMeta(file *os.File, project Project) {
 	projectName := string(project.Env["APP_NAME"])
 	file.Write([]byte(fmt.Sprintf("# %s\n", projectName)))
@@ -107,5 +113,6 @@ func writeDocumentationFile(project Project, destination string) {
 	defer file.Close()
 	writeProjectMeta(file, project)
 	writeProjectModels(file, project)
-	project.readRoutes()
+	routes := project.readRoutes()
+	writeRoutes(file, routes)
 }
