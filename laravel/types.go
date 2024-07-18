@@ -15,6 +15,7 @@ type Route struct {
 	Uri         string
 	Method      string
 	FullUri     string
+	Action      string
 	Middlewares []string
 	Prefixes    []string
 }

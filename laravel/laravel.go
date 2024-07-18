@@ -20,12 +20,13 @@ func Documenting(base_path, destination string) {
 func writeRoutes(file *os.File, routes []Route) {
 	file.Write([]byte("\n## Routes"))
 	for routeIndex := range routes {
-		file.Write([]byte(fmt.Sprintf("\n> **uri**: %s \n", routes[routeIndex].FullUri)))
-		file.Write([]byte(fmt.Sprintf("> **method**: %s \n", strings.ToUpper(routes[routeIndex].Method))))
+		file.Write([]byte(fmt.Sprintf("\n> * **uri**: %s \t\n", routes[routeIndex].FullUri)))
+		file.Write([]byte(fmt.Sprintf("> * **method**: %s \t\n", strings.ToUpper(routes[routeIndex].Method))))
+		file.Write([]byte(fmt.Sprintf("> * **action**: %s \t\n", routes[routeIndex].Action)))
 		if len(routes[routeIndex].Middlewares) > 0 {
-			file.Write([]byte(fmt.Sprintf("> **middlewares**: %s \n", strings.Join(routes[routeIndex].Middlewares, ","))))
+			file.Write([]byte(fmt.Sprintf("> * **middlewares**: %s \t\n", strings.Join(routes[routeIndex].Middlewares, ","))))
 		} else {
-			file.Write([]byte("> **middlewares**: none \n"))
+			file.Write([]byte("> * **middlewares**: none \t\n"))
 		}
 	}
 }

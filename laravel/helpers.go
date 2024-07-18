@@ -3,6 +3,7 @@ package laravel
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -202,9 +203,13 @@ func (project *Project) readRoutes() []Route {
 				}
 			} else {
 				regexUri := regexp.MustCompile(`::` + method + `\('([^']*)',`)
+
 				uriMatches := regexUri.FindStringSubmatch(scanner.Text())
 				if len(uriMatches) > 1 {
 					uri := uriMatches[1]
+					regexAction := regexp.MustCompile(fmt.Sprintf(`Route::%s\('\%s', \[(.*)\]\)`, method, uri))
+					actionMatches := regexAction.FindStringSubmatch(scanner.Text())
+
 					// fmt.Println(method, uri, currentGroups)
 					middlewares := []string{}
 					prefixes := []string{}
@@ -223,6 +228,10 @@ func (project *Project) readRoutes() []Route {
 					route.Middlewares = middlewares
 					route.Prefixes = prefixes
 					route.Uri = uri
+					if len(actionMatches) > 1 {
+						// fmt.Println(actionMatches[1])
+						route.Action = actionMatches[1]
+					}
 					route.Method = method
 					route.FullUri = strings.Replace(fullUri, "//", "/", -1)
 					routes = append(routes, route)
