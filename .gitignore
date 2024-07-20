@@ -1,0 +1,4 @@
+*.exe
+/vendor
+/try
+/great
