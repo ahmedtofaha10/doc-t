@@ -6,6 +6,11 @@ type Project struct {
 	Dependinces ProjectDependinces
 	Tables      map[string]map[string]string
 }
+type Controller struct {
+	Name    string
+	Traits  string
+	Methods []string
+}
 type ProjectDependinces struct {
 	Name       string
 	Require    map[string]string
@@ -19,3 +24,4 @@ type Route struct {
 	Middlewares []string
 	Prefixes    []string
 }
+type MI map[string]interface{}
